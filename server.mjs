@@ -26,7 +26,7 @@ if(process.env.DATABASE_URL){
 }
 const sessions=new Map(),attempts=new Map();
 const snapshot=(d,host=false)=>{const g=activeGame(d);return {state:g.state,revision:d.revision,updatedAt:d.updatedAt,host,mode:d.demoActive?'demo':'real',context:modeContext(d),round:publicRound(g.round),previousRound:publicRound(g.previousRound),canUndo:host&&!d.demoActive&&g.undos.length>0&&!['open','locked'].includes(g.round?.status),canUndoResult:host&&g.round?.status==='settled'&&g.resultUndo?.roundId===g.round.id}};
-const files={'/':['index.html','text/html; charset=utf-8'],'/app.js':['app.js','text/javascript; charset=utf-8'],'/intro.js':['intro.js','text/javascript; charset=utf-8'],'/intro.css':['intro.css','text/css; charset=utf-8'],'/app.css':['app.css','text/css; charset=utf-8']};
+const files={'/feedback.js':['feedback.js','text/javascript; charset=utf-8'],'/':['index.html','text/html; charset=utf-8'],'/app.js':['app.js','text/javascript; charset=utf-8'],'/intro.js':['intro.js','text/javascript; charset=utf-8'],'/intro.css':['intro.css','text/css; charset=utf-8'],'/app.css':['app.css','text/css; charset=utf-8']};
 const assets=Object.fromEntries(await Promise.all(Object.entries(files).map(async([url,[file,type]])=>[url,{data:await readFile(new URL('./public/'+file,import.meta.url)),type}])));
 async function body(req){let s='';for await(const chunk of req){s+=chunk;if(Buffer.byteLength(s)>400000)throw Object.assign(Error('For stor forespørsel'),{status:413})}try{return JSON.parse(s)}catch{throw Object.assign(Error('Ugyldig JSON'),{status:400})}}
 const server=http.createServer(async(req,res)=>{

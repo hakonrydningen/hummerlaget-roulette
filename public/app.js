@@ -11,14 +11,14 @@ const total=bets=>bets.reduce((n,b)=>n+b.stake,0),copy=x=>JSON.parse(JSON.string
 function message(text){$('message').textContent=text}
 async function api(path,data){const res=await fetch('/api/'+path,{method:data?'POST':'GET',headers:data?{'Content-Type':'application/json','X-Roulette-Request':'1'}:{},body:data?JSON.stringify(data):undefined,signal:AbortSignal.timeout(12000)});const value=await res.json();if(!res.ok)throw Object.assign(Error(value.error||'Ukjent feil'),{status:res.status,data:value});return value}
 function rememberPending(){try{if(pending)sessionStorage.setItem('roulette-pending-v2',JSON.stringify(pending));else sessionStorage.removeItem('roulette-pending-v2')}catch{}}
-function apply(next){if(next.revision<board.revision)return;const oldId=board.round?.id,oldContext=board.context;board=next;if(oldId!==board.round?.id||oldContext!==board.context){winning=null;if(draft){message('Runde eller modus er endret. Utkastet ble ikke lagt inn.');draft=null;conflict=false}}if(draft&&saved().version!==baseVersion)conflict=true;render()}
+function apply(next){if(next.revision<board.revision)return;const oldId=board.round?.id,oldContext=board.context;board=next;if(oldId!==board.round?.id||oldContext!==board.context){winning=null;if(draft){message('Runde eller modus er endret. Utkastet ble ikke lagt inn.');draft=null;conflict=false}}if(draft&&saved().version!==baseVersion)conflict=true;render();updateFeedback()}
 async function send(path,payload,success){if(busy)return;pending={path,payload,success};rememberPending();busy=true;render();message('Sender …');try{const result=await api(path,payload);pending=null;rememberPending();busy=false;online=true;if(path==='bets'){draft=null;conflict=false}apply(result);message(board.host?(success||'Lagret.'):'')}catch(e){busy=false;if(e.data?.state)apply(e.data);if(e.status){pending=null;rememberPending();if(e.status===401)board.host=false;if(path==='bets'&&e.status===409)conflict=true;message(e.message)}else{online=false;message('Kunne ikke bekrefte lagring. Behold siden og prøv igjen.')}render()}}
 function request(path,payload,success){return send(path,{...payload,context:board.context,id:crypto.randomUUID()},success)}
 function beginDraft(){if(draft===null){draft=copy(saved().bets);baseVersion=saved().version;draftRound=board.round.id}}
 function draftValid(next){const p=player();if(!p)return false;if(total(next)>100){message('Maks 100 poeng totalt i runden.');return false}if(total(next)>p.points){message('Du har ikke nok poeng.');return false}if(next.some(b=>defs.get(b.key)?.kind==='straight'&&b.stake>25)){message('Maks 25 poeng på hvert enkelttall.');return false}return true}
 function addBet(key){if(!editable()||conflict)return;beginDraft();const next=copy(draft),b=next.find(b=>b.key===key);if(b)b.stake+=chip;else next.push({key,stake:chip});if(!draftValid(next))return;draft=next;message('');renderPersonal()}
 function removeBet(key){if(!editable()||conflict)return;beginDraft();draft=draft.filter(b=>b.key!==key);renderPersonal()}
-function changePlayer(){if((draft||pending)&&!confirm('Bytte navn? Et ulagret utkast forkastes. En ubekreftet sending må avklares først.')){$('player').value=selected;return}if(pending){$('player').value=selected;return message('Avklar den ubekreftede sendingen først.')}selected=$('player').value;draft=null;conflict=false;try{localStorage.setItem('roulette-player-v2',selected)}catch{}renderPersonal()}
+function changePlayer(){if((draft||pending)&&!confirm('Bytte navn? Et ulagret utkast forkastes. En ubekreftet sending må avklares først.')){$('player').value=selected;return}if(pending){$('player').value=selected;return message('Avklar den ubekreftede sendingen først.')}selected=$('player').value;draft=null;conflict=false;try{localStorage.setItem('roulette-player-v2',selected)}catch{}renderPersonal();closeFeedback();updateFeedback()}
 $('player').onchange=changePlayer;
 function renderPersonal(){const p=player();$('my-play').hidden=!p;if(!p)return;const r=board.round,bets=r?.status==='open'?(draft??saved().bets):saved().bets,can=editable();$('my-points').textContent=fmt(p.points);$('my-total').textContent=fmt(total(bets))+' / 100';$('my-left').textContent=fmt(Math.max(0,p.points-(r?.status==='settled'?0:total(bets))));
 $('conflict').hidden=!conflict;$('bet-editor').hidden=r?.status!=='open';$('bet-status').className=draft?'draft':'saved';$('bet-status').textContent=pending?.path==='bets'?'Venter på bekreftelse – ikke lukk siden.':conflict?'Konflikt med en annen enhet.':draft?(r?.status==='open'?'Ubekreftet utkast':'Ulagret utkast er ikke med. Viser bare bekreftede innsatser.'):r?.status==='open'?(saved().version?'Lagret':'Ingen innsatser'):r?.status==='locked'?'Låst':r?.status==='settled'?'Avsluttet':'Venter på runde';
@@ -30,7 +30,7 @@ $('add-combo').textContent='Legg til '+chip+' poeng';$('add-combo').disabled=!ca
 $('repeat').disabled=!can||conflict||!board.previousRound?.book?.[selected]?.bets?.length;$('clear-bets').disabled=!can||conflict;
 $('my-bets').replaceChildren();
 bets.forEach(b=>{const row=el('div',undefined,'bet-row');const d=defs.get(b.key);const label=el('div',undefined,'label');label.append(el('strong',(d?.kind==='straight'?'Tall ':'')+(d?.label||b.key)+' · '+b.stake+' p'));if(d)label.append(el('small','Tilbake ved treff: '+fmt(b.stake*(d.odds+1))+' p · inkl. innsats','return-preview'));row.append(label);if(r?.status==='open'){const remove=btn('×',()=>removeBet(b.key));remove.setAttribute('aria-label','Fjern '+(d?.label||b.key));remove.disabled=!can||conflict;row.append(remove)}$('my-bets').append(row)});
-$('save-bets').hidden=r?.status!=='open';$('save-bets').disabled=!can||draft===null||conflict;$('save-bets').textContent=draft!==null?'Bekreft innsatser · '+total(draft)+' poeng':'Alt er lagret';$('cancel-draft').hidden=draft===null||!!pending;$('my-result').replaceChildren();const result=r?.results?.find(x=>x.playerId===p.id);if(result&&r.status==='settled')$('my-result').append(el('strong',(result.delta>=0?'+':'')+fmt(result.delta)+' poeng denne runden',result.delta>=0?'positive':'negative'));
+$('save-bets').hidden=r?.status!=='open';$('save-bets').disabled=!can||draft===null||conflict;$('save-bets').textContent=draft!==null?'Bekreft innsatser · '+total(draft)+' poeng':'Alt er lagret';$('cancel-draft').hidden=draft===null||!!pending;$('my-result').replaceChildren();const result=r?.results?.find(x=>x.playerId===p.id);if(result&&r.status==='settled')$('my-result').append(el('strong',(result.delta>=0?'+':'')+fmt(result.delta)+' poeng denne runden',result.delta>0?'positive':result.delta<0?'negative':''));
 }
 function comboOptions(){const kind=$('combo-type').value;$('combo-key').replaceChildren(...catalog.filter(d=>d.kind===kind).map(d=>{const o=el('option',d.label);o.value=d.key;return o}))}
 $('combo-type').onchange=comboOptions;$('add-combo').onclick=()=>addBet($('combo-key').value);
@@ -67,6 +67,34 @@ $('host-login').onclick=()=>{$('help').close();$('login').hidden=!$('login').hid
 $('logout').onclick=async()=>{try{await api('logout',{});await refresh();message('Du er logget ut som vert.')}catch{message('Kunne ikke logge ut. Prøv igjen.')}};
 $('retry').onclick=()=>{if(pending&&!busy)send(pending.path,pending.payload,pending.success)};
 $('discard-pending').onclick=async()=>{if(busy)return;if(!confirm('Sendingen kan allerede være lagret. Hente serverens status og forkaste lokalt utkast?'))return;pending=null;rememberPending();draft=null;conflict=false;await refresh();message('Viser serverens bekreftede status.')};
+
+let feedbackStore;try{feedbackStore=localStorage}catch{}
+const resultTracker=RouletteFeedback.tracker(feedbackStore),reducedFeedback=matchMedia('(prefers-reduced-motion: reduce)');
+let feedbackTimer,shownFeedback=null;
+const vibrationAvailable=typeof navigator.vibrate==='function';
+try{$('feedback-vibrate').checked=vibrationAvailable&&localStorage.getItem('roulette-vibrate-v1')==='1'}catch{}
+$('feedback-vibrate').disabled=!vibrationAvailable;
+$('feedback-support').textContent=vibrationAvailable?'Valgfritt og avslått som standard. Krever støtte i enheten og samhandling med siden. Ingen vibrasjon ved redusert bevegelse.':'Denne nettleseren støtter ikke vibrasjon. Du får samme tydelige resultat på skjermen.';
+$('feedback-vibrate').onchange=()=>{try{localStorage.setItem('roulette-vibrate-v1',$('feedback-vibrate').checked?'1':'0')}catch{}if(!$('feedback-vibrate').checked&&vibrationAvailable)navigator.vibrate(0)};
+function closeFeedback(){clearTimeout(feedbackTimer);const focused=$('result-feedback').contains(document.activeElement);$('result-feedback').hidden=true;shownFeedback=null;if(focused)$('help-open').focus()}
+$('feedback-close').onclick=closeFeedback;
+$('result-feedback').onkeydown=e=>{if(e.key==='Escape')closeFeedback()};
+function updateFeedback(){
+ if(shownFeedback&&(shownFeedback.roundId!==board.round?.id||board.round?.status!=='settled'||shownFeedback.context!==board.context||shownFeedback.playerId!==selected))closeFeedback();
+ const result=resultTracker.observe(board,selected);if(!result)return;
+ // Do not interrupt an intro, modal or a background tab with a delayed surprise.
+ if(document.hidden||document.querySelector('dialog[open]')||document.querySelector('main').inert)return;
+ closeFeedback();shownFeedback=result;const demo=result.mode==='demo';
+ $('result-feedback').dataset.tone=result.tone;
+ $('feedback-mode').textContent=(demo?'DEMO · ':'')+'Runde '+result.number+' · '+(player()?.name||'');
+ $('feedback-title').textContent=result.tone==='win'?'Poeng i pluss':result.tone==='loss'?'Poeng i minus':'Runden gikk i null';
+ $('feedback-points').textContent=(result.delta>0?'+':result.delta<0?'−':'')+fmt(Math.abs(result.delta))+(demo?' lekepoeng':' poeng');
+ $('feedback-balance').textContent='Ny saldo: '+fmt(result.after)+(demo?' lekepoeng':' poeng')+' · Netto for hele runden';
+ $('result-feedback').hidden=false;
+ RouletteFeedback.vibrate(navigator,$('feedback-vibrate').checked,reducedFeedback.matches);
+ feedbackTimer=setTimeout(closeFeedback,8000);
+}
+
 async function refresh(){if(polling||busy)return;polling=true;try{const next=await api('state');const redraw=next.revision!==board.revision||next.host!==board.host||!online;online=true;if(redraw)apply(next)}catch{online=false;render()}finally{polling=false}}
 async function init(){if(initializing)return;initializing=true;try{catalog=await api('catalog');defs=new Map(catalog.map(d=>[d.key,d]));comboOptions();await refresh()}catch{online=false;render();message('Kobler til. Prøv å oppdatere siden hvis dette tar lang tid.')}finally{initializing=false}}
 window.addEventListener('online',()=>{if(!catalog.length)init();else refresh()});document.addEventListener('visibilitychange',()=>{if(!document.hidden)refresh()});window.addEventListener('beforeunload',e=>{if(draft||pending){e.preventDefault();e.returnValue=''}});setInterval(()=>{if(!document.hidden){if(!catalog.length)init();else refresh()}},1500);init();
