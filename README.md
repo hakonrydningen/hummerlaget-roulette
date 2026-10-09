@@ -30,3 +30,21 @@ Render Free Postgres utløper etter 30 dager. Eksporter etter arrangementet. Gra
 ## Kontroll
 
 `npm test` kjører oppgjør, validering, tilgangskontroll, konflikt/dobbeltsending, angre, omstart/lagring og isolert introstatus. Den opprinnelige offline-appen er bevart i `original/roulette.html`.
+
+## Digitale runder (versjon 2)
+
+Alle åpner samme adresse. Velg eget navn under «Min plass» uten passord; dette er tillitsbasert, og andre kan velge samme navn. Velg tilskuer for bare å se.
+
+Verten logger inn, åpner runden, låser før spinn og fører vinnertallet én gang. Spillerne lager et utkast og trykker «Bekreft innsatser». Bare bekreftede innsatser er med. Maks 100 poeng samlet per spiller/runde, maks 25 per enkelttall og aldri mer enn saldo. Standard europeiske innsatser, inkludert nullkombinasjoner, beregnes på serveren. Null taper på rødt/svart, oddetall/partall, høy/lav, dusiner og kolonner.
+
+«Gjenta forrige» lager bare et utkast. Samme navn på to enheter gir konflikt ved samtidige endringer; hent serverens innsatser før du redigerer igjen. Ved nettbrudd beholdes en ubekreftet sending i fanen, og «Prøv igjen» bruker samme forespørsels-ID. Ikke lukk før lagringen er bekreftet. Serveren lagrer låsing og hele rundeoppgjøret atomisk. Manuelle saldoendringer er sperret under åpen/låst runde.
+
+Verten kan angre siste rundeoppgjør før neste runde/manuelle korrigering. Alle saldoer tilbakeføres og runden blir låst igjen, slik at riktig vinnertall kan føres. JSON-sikkerhetskopi inneholder navn, saldo, historikk og rundesnapshot; gjenoppretting henter navn/saldo/historikk, men starter uten aktiv digital runde.
+
+### Tekst som må inn i regel-PDF
+
+Erstatt manuell registrering per spiller med: «Velg eget navn på telefonen. Verten åpner runden. Registrer poenginnsatser og trykk Bekreft innsatser. Verten låser før spinn og fører vinnertallet én gang; appen beregner alle saldoer.»
+Legg til: «Kun serverbekreftede innsatser før låsing teller. Maks 100 poeng samlet per runde og 25 på hvert enkelttall, begrenset av saldo. Gjenta forrige er et utkast som må bekreftes. Navnevalg er tillitsbasert. Ved konflikt: hent lagrede innsatser. Ved nettbrudd: vent på bekreftelse eller prøv samme sending igjen.»
+Behold ordinære utbetalingssatser og nullregelen. Presiser at angre tilbakefører hele siste runde, bare før ny runde/manuell korrigering. Appen utfører ingen betalinger.
+
+Custom domain registrert i Render: rulle.rammelaus.no. DNS CNAME: rulle → hummerlaget-roulette.onrender.com. TLS må være utstedt før custom-adressen deles.

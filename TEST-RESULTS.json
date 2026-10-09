@@ -1,0 +1,24 @@
+{
+  "version": "digital-rounds-v2",
+  "automated_tests": 6,
+  "all_passed": true,
+  "verified": [
+    "All catalog bet payouts for every winning number 0–36",
+    "Stake limits and insufficient balance",
+    "Concurrent different players and same-player conflict",
+    "Guest cannot manage rounds or admin",
+    "Cross-origin requests rejected",
+    "Atomic duplicate settlement retries",
+    "Undo round restores both player balances",
+    "SQLite persistence after server restart",
+    "390x844 Safari mobile layout and confirmed test bet",
+    "Independent Chrome spectator automatically received result 0: TEST ALFA975, TEST BETA1875"
+  ],
+  "not_tested": [
+    "Physical phones on cellular network",
+    "Four simultaneous browser UI roles; host and second player exercised through independent HTTP clients",
+    "PostgreSQL concurrency load test; same compare-and-swap algorithm used",
+    "New digital rounds in production with real players; deliberately no test mutations"
+  ],
+  "production_data_policy": "Preserve existing production records; no test writes"
+}
