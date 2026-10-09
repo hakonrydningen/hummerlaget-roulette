@@ -1,0 +1,47 @@
+{
+  "date": "2026-10-09",
+  "scope": "Player UI only; server, rules, payouts, pot and data model unchanged",
+  "reproduction": "Chrome mobile 390x844: second press on a 25-point straight bet attempted 50 points; only error was above visible viewport. Three-column number list obscured by sticky review.",
+  "changes": [
+    "Field presses set amount instead of accumulating; repeated presses are idempotent",
+    "Straight category switches 50-point chip to 25 and disables 50",
+    "Compact 0–36 grid, visible selected field amounts, local feedback",
+    "Non-overlapping review with edit/remove controls; advanced edit selects correct group"
+  ],
+  "automated": {
+    "command": "npm test",
+    "passed": 15,
+    "failed": 0,
+    "coverage": [
+      "All catalog choices selectable and editable",
+      "Straight and zero repeated tap regression",
+      "100 total, 25 straight and balance validation",
+      "Permission, concurrency, idempotent requests, restart persistence",
+      "Demo isolation and existing payouts/pot",
+      "Result feedback regressions"
+    ]
+  },
+  "manual": {
+    "environment": "Native Chrome DevTools responsive 390x844; isolated SQLite with synthetic data only",
+    "passed": [
+      "Reproduction before changes",
+      "Farge: red saved selection and black; Partall and Oddetall",
+      "Ett tall: 0 and 36; repeated taps add once",
+      "All three dozens and columns; low/high",
+      "Split, street, corner, six; 0/3, 0/1/2, 0/2/3, 0/1/2/3",
+      "Double confirmation, saved state after refresh",
+      "Existing combo edit selects correct group and replaces 5 with 10",
+      "Second-client conflict blocks save; use-server restores confirmed data",
+      "Server stop/restart: disconnected controls disabled, automatic reconnect, persistence",
+      "Locked round removes editing controls",
+      "Demo-to-real clears demo choices, no cross-mode bets",
+      "Player-to-observer-to-player; second name with unsaved draft warning and discard",
+      "Synthetic real mode zero saved once on double tap"
+    ]
+  },
+  "not_run": [
+    "Physical iOS/Android hardware and cellular network switching in this iteration",
+    "Every one of the 157 individual catalog fields manually; all were tested programmatically"
+  ],
+  "production_verification": "Pending deployment; no production writes were used for testing"
+}
