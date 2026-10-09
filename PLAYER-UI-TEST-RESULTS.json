@@ -6,11 +6,12 @@
     "Field presses set amount instead of accumulating; repeated presses are idempotent",
     "Straight category switches 50-point chip to 25 and disables 50",
     "Compact 0–36 grid, visible selected field amounts, local feedback",
-    "Non-overlapping review with edit/remove controls; advanced edit selects correct group"
+    "Non-overlapping review with edit/remove controls; advanced edit selects correct group",
+    "Custom positive whole-point amounts retained, with 25 per straight / 100 per round limits"
   ],
   "automated": {
     "command": "npm test",
-    "passed": 15,
+    "passed": 16,
     "failed": 0,
     "coverage": [
       "All catalog choices selectable and editable",
@@ -22,7 +23,7 @@
     ]
   },
   "manual": {
-    "environment": "Native Chrome DevTools responsive 390x844; isolated SQLite with synthetic data only",
+    "environment": "Native Chrome DevTools responsive 390x844 and 320x844; isolated SQLite with synthetic data only",
     "passed": [
       "Reproduction before changes",
       "Farge: red saved selection and black; Partall and Oddetall",
@@ -36,7 +37,9 @@
       "Locked round removes editing controls",
       "Demo-to-real clears demo choices, no cross-mode bets",
       "Player-to-observer-to-player; second name with unsaved draft warning and discard",
-      "Synthetic real mode zero saved once on double tap"
+      "Synthetic real mode zero saved once on double tap",
+      "320px responsive layout with five columns, no horizontal overflow",
+      "Custom 15-point amount: paste then direct field press sets correct amount on first press"
     ]
   },
   "not_run": [

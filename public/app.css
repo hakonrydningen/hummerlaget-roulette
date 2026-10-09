@@ -24,3 +24,7 @@
 #savebar{position:static;margin-top:18px;padding:14px 0 0;border-top:1px solid var(--line)}#savebar h3{margin:0;font-size:17px}#savebar>.note{margin:5px 0 8px}#my-bets{max-height:none;overflow:visible}.step-label{font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:.08em;color:var(--gold);margin:15px 0 9px}.beginner-tabs button{min-height:46px}.beginner-choices button{min-height:64px}#straight{grid-template-columns:repeat(auto-fit,minmax(44px,1fr));gap:6px}#straight button{min-height:52px;padding:6px 2px;font-size:18px}#straight button:first-child{grid-column:1/-1;min-height:44px}button.picked{box-shadow:inset 0 0 0 2px var(--gold)}.field-amount{display:block;font-size:10px!important;line-height:1.2;color:var(--gold);opacity:1!important;margin-top:2px}#choice-hint{margin:8px 0 12px;min-height:36px}#editor-message{font-size:13px;line-height:1.4;color:var(--gold);margin:8px 0}#editor-message:empty{display:none}#my-bets .bet-row{font-size:13px}#my-bets .bet-row button{font-size:12px;min-height:44px}#chips button:disabled{opacity:.3}.personal{scroll-margin:12px}
 
 #editor-message,#editor-message:empty{display:block;min-height:38px;margin:8px 0}#straight button,#straight button:first-child{height:52px;min-height:52px}.beginner-choices button{height:64px}
+
+.custom-stake{display:flex;align-items:center;justify-content:space-between;gap:12px;margin:4px 0 8px;font-size:12px}.custom-stake input{width:80px;min-height:44px;padding:7px 10px;text-align:center;font-weight:650}
+
+#my-total{font-size:clamp(17px,5vw,23px);white-space:nowrap}
