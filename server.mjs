@@ -2,6 +2,7 @@ import http from 'node:http';
 import {readFile,mkdir} from 'node:fs/promises';
 import {randomBytes,timingSafeEqual,scryptSync} from 'node:crypto';
 import {valid} from './domain.mjs';
+import {modeContext,activeGame,changeDemo} from './modes.mjs';
 import {CATALOG,publicRound,saveBets,roundAction,RuleError} from './rounds.mjs';
 const production=process.env.NODE_ENV==='production';
 const password=process.env.HOST_PASSWORD;
@@ -24,7 +25,7 @@ if(process.env.DATABASE_URL){
  close=()=>db.close();
 }
 const sessions=new Map(),attempts=new Map();
-const snapshot=(d,host=false)=>({state:d.state,revision:d.revision,updatedAt:d.updatedAt,host,round:publicRound(d.round),previousRound:publicRound(d.previousRound),canUndo:host&&d.undos.length>0&&!['open','locked'].includes(d.round?.status),canUndoResult:host&&d.round?.status==='settled'&&d.resultUndo?.roundId===d.round.id});
+const snapshot=(d,host=false)=>{const g=activeGame(d);return {state:g.state,revision:d.revision,updatedAt:d.updatedAt,host,mode:d.demoActive?'demo':'real',context:modeContext(d),round:publicRound(g.round),previousRound:publicRound(g.previousRound),canUndo:host&&!d.demoActive&&g.undos.length>0&&!['open','locked'].includes(g.round?.status),canUndoResult:host&&g.round?.status==='settled'&&g.resultUndo?.roundId===g.round.id}};
 const files={'/':['index.html','text/html; charset=utf-8'],'/app.js':['app.js','text/javascript; charset=utf-8'],'/intro.js':['intro.js','text/javascript; charset=utf-8'],'/intro.css':['intro.css','text/css; charset=utf-8'],'/app.css':['app.css','text/css; charset=utf-8']};
 const assets=Object.fromEntries(await Promise.all(Object.entries(files).map(async([url,[file,type]])=>[url,{data:await readFile(new URL('./public/'+file,import.meta.url)),type}])));
 async function body(req){let s='';for await(const chunk of req){s+=chunk;if(Buffer.byteLength(s)>400000)throw Object.assign(Error('For stor forespørsel'),{status:413})}try{return JSON.parse(s)}catch{throw Object.assign(Error('Ugyldig JSON'),{status:400})}}
@@ -50,14 +51,15 @@ const server=http.createServer(async(req,res)=>{
  const b=await body(req);if(typeof b.password!=='string'||b.password.length>256||!timingSafeEqual(scryptSync(b.password,salt,64),passwordHash))return send(401,{error:'Feil vertspassord'});
  attempts.delete(ip);const id=randomBytes(32).toString('hex');sessions.set(id,Date.now()+43200000);return send(200,{host:true},{'Set-Cookie':`roulette_host=${id}; HttpOnly; SameSite=Strict; Path=/; Max-Age=43200${production?'; Secure':''}`});
  }
- if(path==='/api/bets'||path==='/api/round'){
- if(path==='/api/round'&&!host)return send(401,{error:'Bare verten kan styre runden.'});
+ if(path==='/api/bets'||path==='/api/round'||path==='/api/demo'){
+ if(path!=='/api/bets'&&!host)return send(401,{error:'Bare verten kan styre runden.'});
  const b=await body(req);if(!b||typeof b.id!=='string'||b.id.length<8||b.id.length>100)return send(400,{error:'Ugyldig forespørsels-ID.'});
- const key=path==='/api/bets'?`bets:${b.roundId}:${b.playerId}:${b.id}`:`round:${b.action}:${b.roundId||'new'}:${b.id}`;
+ const key=JSON.stringify([b.context,path,b.action,b.roundId,b.playerId,b.id]);
  for(let attempt=0;attempt<30;attempt++){
  const current=await read();if(current.requests.includes(key))return send(200,{...snapshot(current,host),ackId:b.id});
+ if(b.context!==modeContext(current))return send(409,{error:'Modusen er endret. Oppdater siden før du fortsetter.',...snapshot(current,host)});
  let next=structuredClone(current);
- try{next=path==='/api/bets'?saveBets(next,b):roundAction(next,b)}catch(e){if(e instanceof RuleError)return send(e.status,{error:e.message,...snapshot(current,host)});throw e}
+ try{if(path==='/api/demo')changeDemo(next,b);else if(path==='/api/bets')saveBets(activeGame(next),b);else roundAction(activeGame(next),b)}catch(e){if(e instanceof RuleError)return send(e.status,{error:e.message,...snapshot(current,host)});throw e}
  next.revision=current.revision+1;next.updatedAt=new Date().toISOString();next.requests=[...current.requests,key].slice(-5000);
  if(await cas(current.revision,next))return send(200,{...snapshot(next,host),ackId:b.id});
  }
@@ -67,7 +69,7 @@ const server=http.createServer(async(req,res)=>{
  if(path==='/api/logout'){sessions.delete(token);return send(200,{host:false},{'Set-Cookie':`roulette_host=; HttpOnly; SameSite=Strict; Path=/; Max-Age=0${production?'; Secure':''}`})}
  if(path!=='/api/change')return send(404,{error:'Ukjent handling'});
  const b=await body(req);if(!Number.isSafeInteger(b.revision)||typeof b.id!=='string'||b.id.length>100||!['replace','undo'].includes(b.action))return send(400,{error:'Ugyldig endring'});
- const current=await read();if(['open','locked'].includes(current.round?.status))return send(409,{error:'Manuelle saldoendringer er sperret mens en runde pågår.',...snapshot(current,true)});if(current.requests.includes(b.id))return send(200,snapshot(current,true));
+ const current=await read();if(b.context!==modeContext(current))return send(409,{error:'Modusen er endret. Oppdater siden før du fortsetter.',...snapshot(current,true)});if(current.demoActive)return send(409,{error:'Bruk Nullstill demo. Import og manuelle endringer er sperret i demo.',...snapshot(current,true)});if(['open','locked'].includes(current.round?.status))return send(409,{error:'Manuelle saldoendringer er sperret mens en runde pågår.',...snapshot(current,true)});if(current.requests.includes(b.id))return send(200,snapshot(current,true));
  if(current.revision!==b.revision)return send(409,{error:'Bordet er endret i en annen fane. Oppdatert tavle er hentet.',...snapshot(current,true)});
  let nextState,nextUndos;
  if(b.action==='undo'){if(!current.undos.length)return send(400,{error:'Ingen endring å angre'});nextState=current.undos.at(-1);nextUndos=current.undos.slice(0,-1)}

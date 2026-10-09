@@ -1,0 +1,27 @@
+{
+  "release": "Beginner choices and shared isolated demo",
+  "automated_tests": 7,
+  "all_passed": true,
+  "verified": [
+    "Every legal bet payout on all outcomes0–36; stake limits unchanged",
+    "Real open round and bets byte-equivalent after demo start, play, reset, exit and restart (game-data projection read directly from SQLite)",
+    "Two independent API players and concurrent demo-exit/bet race",
+    "Stale real and demo contexts rejected; guest cannot switch modes",
+    "Repeated start and settlement requests are idempotent, including after a simulated lost response",
+    "Demo state survives restart; previous host cookie invalidated",
+    "Manual replace/import rejected in demo",
+    "Safari390x844 beginner UI: default Farge, parity, Ett tall, Flere valg",
+    "Existing advanced bet remained visible and unchanged when switching categories",
+    "New player starts with no bets;25 on0 preview900including stake; persisted after refresh",
+    "Safari host Demo button and Chrome guest automatically share mode",
+    "Chrome guest demo confirmation then locked view with no edit controls",
+    "Demo exit automatically restores original open round and original bet in Chrome"
+  ],
+  "not_tested": [
+    "Physical mobile devices/cellular network",
+    "Screen-reader audio",
+    "Mutating production demo tests; only isolated local data used",
+    "PostgreSQL restart/load test; deployed uses same CAS persistence flow"
+  ],
+  "production_policy": "Compare fresh production state before and after deploy; never seed/reset production"
+}

@@ -48,3 +48,13 @@ Legg til: «Kun serverbekreftede innsatser før låsing teller. Maks 100 poeng s
 Behold ordinære utbetalingssatser og nullregelen. Presiser at angre tilbakefører hele siste runde, bare før ny runde/manuell korrigering. Appen utfører ingen betalinger.
 
 Custom domain registrert i Render: rulle.rammelaus.no. DNS CNAME: rulle → hummerlaget-roulette.onrender.com. TLS må være utstedt før custom-adressen deles.
+
+## Nybegynnervisning og felles demo
+
+Standardvalgene er Farge, Partall/oddetall og Ett tall; Flere valg åpner øvrige innsatser. Kategoribytte endrer ikke innsatser. Hver valgt innsats viser konkrete poeng tilbake ved treff, inkludert innsatsen; ulike innsatser summeres ikke til en lovet gevinst. Eksempel: 25 poeng på ett tall gir 900 tilbake ved treff (875 netto), mens 25 poeng på rødt gir 50 tilbake (25 netto).
+
+Verten starter Demo for hele bordet, også mens ekte runde er åpen. Demo kopierer spillernavn og starter med 1 000 lekepoeng hver, uten ekte innsatser. Åpne, bekreft, lås og før vinnertall som vanlig. Avslutt demo gjenopptar uendret ekte spill; Nullstill demo starter bare demoen på nytt. Demo har ingen premiepott, import eller eksport. Alle nye klienter viser en fast DEMO-markør; hjelp viser også DEMO.
+
+Demotilstanden lagres separat i samme database-dokument og overlever restart. Hver skrivende forespørsel må ha gjeldende modusgenerasjon. Bytte og nullstilling endrer generasjonen, så gamle klienter ikke kan skrive inn i neste modus eller øvingsøkt. Hele dokumentet oppdateres atomisk med revisjonskontroll. Realspilldata, historikk, rundebook og angregrunnlag endres ikke av demo.
+
+Etter denne oppdateringen må eksisterende nettleserfaner lastes på nytt før de kan skrive. Verten logger inn igjen etter deploy. Ingen produksjonsdata brukes til muterende tester.
