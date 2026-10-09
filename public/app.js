@@ -33,3 +33,5 @@ $('logout').onclick=async()=>{try{await api('logout',{});host=false;pending=null
 let polling=false;
 async function refresh(){if(polling||busy)return;polling=true;try{const [session,data]=await Promise.all([api('session'),api('state')]);const redraw=host!==session.host||revision!==data.revision||!online;host=session.host;online=true;if(redraw)apply(data);status(true)}catch{status(false)}finally{polling=false}}
 window.addEventListener('online',refresh);document.addEventListener('visibilitychange',()=>{if(!document.hidden)refresh()});setInterval(()=>{if(!document.hidden)refresh()},2500);refresh();
+
+window.addEventListener("beforeunload",e=>{if(pending){e.preventDefault();e.returnValue=""}});
