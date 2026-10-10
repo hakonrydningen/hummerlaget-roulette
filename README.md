@@ -58,3 +58,12 @@ Verten starter Demo for hele bordet, også mens ekte runde er åpen. Demo kopier
 Demotilstanden lagres separat i samme database-dokument og overlever restart. Hver skrivende forespørsel må ha gjeldende modusgenerasjon. Bytte og nullstilling endrer generasjonen, så gamle klienter ikke kan skrive inn i neste modus eller øvingsøkt. Hele dokumentet oppdateres atomisk med revisjonskontroll. Realspilldata, historikk, rundebook og angregrunnlag endres ikke av demo.
 
 Etter denne oppdateringen må eksisterende nettleserfaner lastes på nytt før de kan skrive. Verten logger inn igjen etter deploy. Ingen produksjonsdata brukes til muterende tester.
+
+
+### Ny kveld og serverkopier
+
+Innlogget vert kan velge **Start ny kveld** også under en åpen eller låst runde. En egen dialog beskriver endringen og har Avbryt. Bekreftet ny kveld starter med tom spillerliste, ingen innsatser/runder og ny historikk; nye spillere legges til med 1 000 poeng. Ingen runde gjøres opp ved avbrudd.
+
+Før byttet lagres hele den ekte kvelden (spillere, poeng, historikk, innsatser, runder og angredata) i samme atomiske databaseoppdatering. **Gjenopprett en kveld** viser lagrede serverkopier bare for verten. Gjenoppretting krever bekreftelse og lagrer også kvelden den erstatter. Kopiene slettes ikke ved en ny kveld eller gjenoppretting. De ligger i den eksisterende databasens dokument; databasens levetid gjelder også kopiene.
+
+Serveren krever vertsinnlogging, korrekt kontekst og den eksakte revisjonen som ble vist da bekreftelsen ble åpnet. Samtidig aktivitet gir konflikt og krever ny kontroll/bekreftelse. Forespørsels-ID gjør retry idempotent. Ny kontekst hindrer gamle spillerfaner i å skrive til en ny eller gjenopprettet kveld. Demo må avsluttes før ekte kveld kan startes/gjenopprettes; Nullstill demo er fortsatt separat.
