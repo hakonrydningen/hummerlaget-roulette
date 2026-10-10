@@ -30,3 +30,5 @@
 #my-total{font-size:clamp(17px,5vw,23px);white-space:nowrap}
 
 .access-bar{display:flex;flex-wrap:wrap;gap:8px;align-items:center;padding:10px 0}.access-bar>span{flex:1 1 100%;font-size:13px;color:var(--muted)}.access-bar button{font-size:13px;min-height:44px}.access-bar p{flex-basis:100%;margin:0;font-size:13px;color:var(--gold)}.access-bar p:empty{display:none}.round-guidance{font-size:14px;line-height:1.5;color:var(--text);margin:12px 0 0}.sessionbar #connection{line-height:1.5}#retrybox button{margin:6px 4px 0 0}#host-actions button{white-space:normal}#bet-status{font-weight:600}
+
+#reset-note{line-height:1.55}#reset-note:focus{outline:2px solid #dfba70;outline-offset:5px}#reset[data-blocked="true"]{border-style:dashed}
